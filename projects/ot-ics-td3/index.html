@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OT/ICS — Gouverne sous attaque</title>
+  <link rel="stylesheet" href="../../assets/viewer.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>▙</text></svg>">
+</head>
+<body>
+  <script>
+    window.RENDU = {
+      title: "OT/ICS — Gouverne sous attaque",
+      pdf: "slides.pdf",
+      scene: "scene.js",
+      // slide number → 3D target(s) defined in scene.js
+      bindings: {
+        1: "overview",
+        2: "overview",
+        3: "rudder",
+        4: "cc",
+        5: "attack",     // attacker + CC, lights the red attack flow
+        6: "plc",        // freeze the rudder
+        7: "rudder",
+        8: "scada",
+        9: "overview",
+        10: "overview"
+      }
+    };
+  </script>
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+  <script type="module" src="../../assets/viewer.js"></script>
+</body>
+</html>

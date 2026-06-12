@@ -215,6 +215,7 @@ function resolveBinding(slideNumber) {
 
 function setFocus(names) {
   currentTargetNames = names;
+  window.__RENDU_FOCUS__ = names;   // expose active focus to scene.update()
   const specs = names.map((n) => targets[n]);
   const objects = specs.flatMap((s) => s.objects);
 

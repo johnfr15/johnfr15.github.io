@@ -3,6 +3,13 @@
   "school": "École 2600",
   "projects": [
     {
+      "slug": "ot-ics-td3",
+      "title": "Gouverne sous attaque",
+      "subtitle": "OT/ICS — analyse, attaque & détection d'un automate naval",
+      "year": "2026",
+      "tags": ["ics", "modbus", "scada", "ecole2600"]
+    },
+    {
       "slug": "demo",
       "title": "Demo rendu",
       "subtitle": "Template project — duplicate me",
