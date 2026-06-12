@@ -1,0 +1,13 @@
+{
+  "author": "John",
+  "school": "École 2600",
+  "projects": [
+    {
+      "slug": "demo",
+      "title": "Demo rendu",
+      "subtitle": "Template project — duplicate me",
+      "year": "2026",
+      "tags": ["template", "3d-viewer"]
+    }
+  ]
+}

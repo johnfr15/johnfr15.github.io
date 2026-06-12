@@ -1,0 +1,140 @@
+/* @theme phosphor2600 */
+
+@import 'default';
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,400&display=swap');
+
+:root {
+  --bg: #0b0a08;
+  --bg-raise: #14120d;
+  --phosphor: #ffb000;
+  --phosphor-dim: #b87d00;
+  --ink: #e8ddc8;
+  --ink-dim: #8a8170;
+}
+
+section {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 24px;
+  line-height: 1.65;
+  padding: 80px 90px;
+  position: relative;
+}
+
+/* phosphor frame, like the viewer */
+section::before {
+  content: '';
+  position: absolute;
+  inset: 26px;
+  border: 2px solid var(--phosphor);
+  pointer-events: none;
+}
+
+/* page number (paginate: true) */
+section::after {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px;
+  color: var(--ink-dim);
+  bottom: 38px;
+  right: 52px;
+}
+
+h1, h2, h3 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  color: var(--phosphor);
+  line-height: 1.1;
+}
+
+h1 { font-size: 64px; margin-bottom: 0.4em; }
+h2 { font-size: 44px; margin-bottom: 0.5em; }
+h3 { font-size: 30px; color: var(--ink); }
+
+strong { color: var(--phosphor); font-weight: 500; }
+em { color: var(--ink-dim); }
+
+a { color: var(--phosphor-dim); }
+
+ul, ol { margin-left: 0.2em; }
+li { margin: 0.25em 0; }
+li::marker { color: var(--phosphor-dim); }
+
+blockquote {
+  border-left: 3px solid var(--phosphor);
+  padding-left: 1em;
+  color: var(--ink-dim);
+  font-style: italic;
+}
+
+code {
+  font-family: 'IBM Plex Mono', monospace;
+  background: var(--bg-raise);
+  color: var(--phosphor);
+  padding: 0.1em 0.4em;
+  border-radius: 0;
+}
+
+pre {
+  background: var(--bg-raise);
+  border: 1px solid rgba(255, 176, 0, 0.25);
+  border-radius: 0;
+  padding: 0.9em 1.1em;
+  font-size: 20px;
+  line-height: 1.55;
+}
+
+pre code {
+  background: none;
+  color: var(--ink);
+}
+
+table {
+  font-size: 20px;
+}
+th {
+  background: var(--bg-raise);
+  color: var(--phosphor);
+  border: 1px solid rgba(255, 176, 0, 0.3);
+}
+td {
+  border: 1px solid rgba(255, 176, 0, 0.18);
+}
+
+img {
+  background: transparent;
+}
+
+/* title slides: <!-- _class: lead --> */
+section.lead {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+}
+section.lead h1 {
+  font-size: 88px;
+  text-shadow: 0 0 30px rgba(255, 176, 0, 0.4);
+}
+section.lead p { color: var(--ink-dim); }
+
+/* inverted slides for emphasis: <!-- _class: invert --> */
+section.invert {
+  background: var(--phosphor);
+  color: var(--bg);
+}
+section.invert::before { border-color: var(--bg); }
+section.invert h1, section.invert h2, section.invert h3 { color: var(--bg); }
+section.invert::after { color: rgba(11, 10, 8, 0.6); }
+section.invert strong { color: var(--bg); }
+section.invert code { background: rgba(11, 10, 8, 0.12); color: var(--bg); }
+
+header, footer {
+  font-size: 15px;
+  color: var(--ink-dim);
+  letter-spacing: 0.08em;
+}
+header { top: 38px; left: 52px; }
+footer { bottom: 38px; left: 52px; }

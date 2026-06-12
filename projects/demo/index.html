@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Demo rendu</title>
+  <link rel="stylesheet" href="../../assets/viewer.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>▙</text></svg>">
+</head>
+<body>
+  <script>
+    window.RENDU = {
+      title: "Demo rendu",
+      pdf: "slides.pdf",
+      scene: "scene.js",
+      // slide number → target name(s) defined in scene.js
+      // (a slide without a binding keeps the previous focus)
+      bindings: {
+        1: "overview",
+        2: "overview",
+        3: "gateway",
+        4: "firewall",
+        5: "api",
+        6: "db",
+        7: "overview"
+      }
+    };
+  </script>
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+  <script type="module" src="../../assets/viewer.js"></script>
+</body>
+</html>

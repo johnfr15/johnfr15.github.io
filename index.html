@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>john@2600 — projects</title>
+  <meta name="description" content="School projects of John — École 2600. Each rendu is rendered as an explorable 3D scene.">
+  <link rel="stylesheet" href="assets/site.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>▙</text></svg>">
+</head>
+<body>
+  <div class="wrap">
+
+    <header>
+      <div class="host"><span class="prompt">john@2600</span>:~/renduz$ <span class="prompt">ls</span></div>
+      <div class="status"><span class="dot"></span>ONLINE</div>
+    </header>
+
+    <section class="hero">
+      <h1>Renduz<br><span class="amber">/2600</span></h1>
+      <p class="sub">
+        School projects of <b>John</b> — École 2600.
+        Each <b>rendu</b> below opens as a 3D environment of the project,
+        with the soutenance slides on the side: scroll the slides and the
+        camera flies to the component being explained.
+      </p>
+    </section>
+
+    <main>
+      <div class="section-label">projects</div>
+      <ul id="project-list">
+        <li class="empty">loading manifest…</li>
+      </ul>
+    </main>
+
+    <footer>
+      <span>© <span id="year"></span> John — École 2600</span>
+      <span><a href="https://github.com/johnfr15" target="_blank" rel="noopener">github.com/johnfr15</a></span>
+    </footer>
+
+  </div>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    fetch('projects.json')
+      .then(r => r.json())
+      .then(data => {
+        const list = document.getElementById('project-list');
+        if (!data.projects || !data.projects.length) {
+          list.innerHTML = '<li class="empty">no projects yet — see README.md to add one</li>';
+          return;
+        }
+        list.innerHTML = data.projects.map((p, i) => `
+          <li>
+            <a class="project-card" href="projects/${p.slug}/" style="animation-delay:${0.35 + i * 0.08}s">
+              <div class="row">
+                <span class="num">${String(i + 1).padStart(2, '0')}</span>
+                <h2>${p.title}</h2>
+                <span class="year">${p.year ?? ''}</span>
+              </div>
+              <div class="meta">
+                ${p.subtitle ? `<span>${p.subtitle}</span>` : ''}
+                ${(p.tags ?? []).map(t => `<span class="tag">${t}</span>`).join('')}
+              </div>
+              <span class="arrow">→</span>
+            </a>
+          </li>
+        `).join('');
+      })
+      .catch(() => {
+        document.getElementById('project-list').innerHTML =
+          '<li class="error">failed to load projects.json — if you opened this file directly, serve it instead: python3 -m http.server</li>';
+      });
+  </script>
+</body>
+</html>
