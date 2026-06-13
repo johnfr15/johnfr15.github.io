@@ -400,7 +400,15 @@ function animate(t) {
   // slow idle orbit around whatever is focused
   view.tAzimuth += dt * 0.05;
 
-  const k = 0.05;
+  // optional scene-driven camera override (e.g. follow an animated packet);
+  // the scene sets window.__RENDU_VIEW__ = { center:[x,y,z], radius } per frame
+  const camOv = window.__RENDU_VIEW__;
+  if (camOv) {
+    view.tCenter.set(camOv.center[0], camOv.center[1], camOv.center[2]);
+    view.tRadius = camOv.radius;
+  }
+
+  const k = camOv ? 0.11 : 0.05;     // tighter follow when overridden
   view.center.lerp(view.tCenter, k);
   view.radius += (view.tRadius - view.radius) * k;
   view.azimuth += shortestAngle(view.tAzimuth - view.azimuth) * k;

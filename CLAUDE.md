@@ -27,7 +27,12 @@ One shared ES module driving every project page. Pipeline:
    live in `engineGroup` so dimming never touches them. No `scene` config →
    fallback wireframe icosahedron. After build, every mesh in `root` gets
    its material **cloned** (per-mesh dimming) and base opacity/emissive
-   stashed in `userData`.
+   stashed in `userData`. Two window hooks bridge engine↔scene: the engine
+   sets `window.__RENDU_FOCUS__` = current target names (scene `update()`
+   reads it to react to the active slide); the scene may set
+   `window.__RENDU_VIEW__ = {center:[x,y,z], radius}` to drive the camera
+   per-frame (e.g. follow an animated packet), or `null` to release it.
+   See `projects/ot-ics-td3/scene.js` for the scripted attack-packet fly-along.
 3. **PDF → wheel** (`loadPdf` + `layoutWheel`): pdf.js rasterizes each page
    to a 1100px-wide `<canvas>`, wrapped in `.slide-card` divs inside the
    fixed `#wheel` container (right 30vw). The wheel is **pure DOM/CSS, not

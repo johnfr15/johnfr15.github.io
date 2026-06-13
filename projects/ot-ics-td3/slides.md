@@ -88,10 +88,17 @@ Au lancement de la VM **Attacker** (`.15.4`), une seule requête :
 GET /attack?plc=gouv&choice=1&offset=10
 ```
 
-- **Modification métier** : le gouvernail **se fige** (30 / 46 / 50…)
-  tandis que l'ordre continue de varier.
-- **Cible** : le **PLC** (`plc=gouv`), atteint **via le CC**.
-- Ni exploit, ni authentification : une **API exposée** suffit.
+La capture *exhaustive* corrèle le clic HTTP à l'écriture Modbus dans le PLC,
+**18 ms plus tard** :
+
+```
+t+0      .15.4 → CC   GET /attack?plc=gouv&choice=1&offset=10
+t+18ms   CC → PLC     FC6 reg198 = 10   (offset)
+t+21ms   CC → PLC     FC6 reg196 = 1    (choice)
+```
+
+- **Cible** : le **PLC**, via les registres **196/198** (≠ ordre reg 40)
+- Le gouvernail **se fige** ; ni exploit, ni authentification
 
 ---
 
@@ -107,13 +114,17 @@ Reproduits et restaurés entre chaque essai :
 
 ---
 
-## 07 / Impact métier
+## 07 / L'attaque sectionne la boucle
 
-Sur un navire, le gouvernail figé = **barre qui ne répond plus**.
+Effet réseau majeur : sous attaque, le brin **CC → PLC** s'éteint.
 
-- l'ordre de barre évolue, l'actionneur reste bloqué
-- la supervision peut afficher une valeur **physiquement impossible**
-- **disponibilité** et **intégrité** touchées — les deux piliers OT
+| État | Trafic Modbus CC ↔ PLC |
+|------|------------------------|
+| Nominal | **2816 trames / 152 s** (scrutation + ordre relayé) |
+| Sous attaque | **5 trames / 3740 s** — boucle morte |
+
+Le gouvernail garde sa **dernière valeur relayée** → barre qui ne répond plus.
+*(La SCADA, elle, continue d'écrire l'ordre sur le CC : seul CC → PLC est coupé.)*
 
 ---
 
@@ -124,12 +135,12 @@ Sur un navire, le gouvernail figé = **barre qui ne répond plus**.
 if abs(order_rub - phy_l_rub) > SEUIL and persiste(3s):
     alerte("manipulation de la gouverne")
 
-# D2 : valeur figée alors que l'ordre varie
-if var(phy_l_rub) ~ 0 and var(order_rub) > 0:
-    alerte("gouvernail figé")
+# D7 : heartbeat de la boucle de commande
+if taux_scrutation(CC_vers_PLC, 10s) < SEUIL_MIN:
+    alerte("relais CC<->PLC sectionné")   # détecte le gel à la source
 ```
 
-+ **réseau** : write Modbus hors-SCADA, appel HTTP `/attack`, hôte non inventorié.
++ **réseau** : write Modbus hors-SCADA (reg 40/196/198), HTTP `/attack`, hôte non inventorié.
 
 ---
 
