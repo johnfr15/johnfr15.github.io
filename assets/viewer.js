@@ -43,6 +43,12 @@ const CONFIG = Object.assign(
 const PHOSPHOR = 0xffb000;
 const DIM_OPACITY = 0.16;
 
+// slide-overlay state the controller drives (declared early: wheelShare()
+// runs during module init, before the slides-engine block below).
+const SCALE_MIN = 0.65, SCALE_MAX = 1.6;
+let slideScale = 1;       // controller-driven slide size (× the base wheel share)
+let presenting = false;   // slides fullscreen / presentation mode
+
 /* ── DOM chrome ───────────────────────────────────────────────────── */
 
 document.title = `${CONFIG.title} — rendu /2600`;
@@ -61,6 +67,7 @@ document.body.insertAdjacentHTML('beforeend', `
     <div class="counter"><span class="current" id="counter-current">01</span> / <span id="counter-total">--</span></div>
     <div class="progress"><div class="bar" id="progress-bar"></div></div>
   </div>
+  <div class="stage" id="stage" aria-hidden="true"></div>
   <div class="wheel" id="wheel"></div>
 `);
 
@@ -71,6 +78,7 @@ const counterCurrent = document.getElementById('counter-current');
 const counterTotal = document.getElementById('counter-total');
 const progressBar = document.getElementById('progress-bar');
 const wheelEl = document.getElementById('wheel');
+const stageEl = document.getElementById('stage');
 
 function fail(message) {
   loaderEl.classList.remove('done');
@@ -95,7 +103,12 @@ document.body.prepend(renderer.domElement);
 
 // the wheel takes the right edge: shift the camera frustum so the
 // focused model is framed in the remaining left area
-function wheelShare() { return innerWidth < 760 ? 0.24 : 0.30; }
+// fraction of the viewport the wheel covers → drives the camera frustum
+// shift. 0 while presenting (the wheel is replaced by the fullscreen stage).
+function wheelShare() {
+  if (presenting) return 0;
+  return (innerWidth < 760 ? 0.38 : 0.30) * slideScale;
+}
 function applyViewOffset() {
   camera.aspect = innerWidth / innerHeight;
   camera.setViewOffset(innerWidth, innerHeight, innerWidth * wheelShare() * 0.5, 0, innerWidth, innerHeight);
@@ -336,8 +349,10 @@ function goTo(i) {
   counterCurrent.textContent = String(current + 1).padStart(2, '0');
   progressBar.style.width = total > 1 ? `${(current / (total - 1)) * 100}%` : '100%';
   layoutWheel();
+  if (presenting) syncStage();
   const names = resolveBinding(current + 1);
   if (names && names.length) setFocus(names);
+  emitChange();
 }
 
 const next = () => goTo(current + 1);
@@ -360,6 +375,7 @@ addEventListener('keydown', (e) => {
   else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); prev(); }
   else if (e.key === 'Home') goTo(0);
   else if (e.key === 'End') goTo(total - 1);
+  else if (e.key === 'Escape' && presenting) { e.preventDefault(); exitFullscreen(); }
 });
 
 let touchStart = null;
@@ -386,6 +402,80 @@ addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
   layoutWheel();
 });
+
+/* ── slides engine ────────────────────────────────────────────────────
+ * The handler surface the Controller (the user's panel) drives. Everything
+ * that manipulates the slide overlay lives behind this small interface, so
+ * the controller never has to know about the wheel / pdf internals.
+ *
+ *   user ─▶ controller ─▶ slidesEngine ─▶ (wheel · stage · camera)
+ * ──────────────────────────────────────────────────────────────────── */
+
+const changeSubs = new Set();
+
+function slidesState() {
+  return { index: current, total, scale: slideScale, fullscreen: presenting };
+}
+function emitChange() { const s = slidesState(); changeSubs.forEach((f) => f(s)); }
+
+// slide size: scale the wheel width and keep the camera frustum shift matched
+function applySlideScale(s) {
+  slideScale = Math.min(SCALE_MAX, Math.max(SCALE_MIN, s));
+  document.documentElement.style.setProperty('--wheel-scale', slideScale.toFixed(3));
+  applyViewOffset();
+  layoutWheel();
+  emitChange();
+}
+
+// presentation mode: lift the active slide card onto a fullscreen stage,
+// hand the wheel its card back on exit
+let stageCard = null;
+function syncStage() {
+  const want = cards[current];
+  if (!want || stageCard === want) return;
+  if (stageCard && stageCard.parentElement === stageEl) wheelEl.appendChild(stageCard);
+  stageEl.appendChild(want);
+  stageCard = want;
+}
+function enterFullscreen() {
+  if (presenting) return;
+  presenting = true;
+  document.body.classList.add('presenting');
+  syncStage();
+  applyViewOffset();
+  document.documentElement.requestFullscreen?.().catch(() => {});
+  emitChange();
+}
+function exitFullscreen() {
+  if (!presenting) return;
+  presenting = false;
+  document.body.classList.remove('presenting');
+  if (stageCard && stageCard.parentElement === stageEl) wheelEl.appendChild(stageCard);
+  stageCard = null;
+  if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+  applyViewOffset();
+  layoutWheel();
+  emitChange();
+}
+function toggleFullscreen() { presenting ? exitFullscreen() : enterFullscreen(); }
+
+// native Esc / browser-chrome exit → leave presentation too
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && presenting) exitFullscreen();
+});
+
+const slidesEngine = {
+  next, prev, goTo,
+  state: slidesState,
+  onChange(cb) { changeSubs.add(cb); return () => changeSubs.delete(cb); },
+  scaleRange: () => ({ min: SCALE_MIN, max: SCALE_MAX }),
+  getScale: () => slideScale,
+  setScale: applySlideScale,
+  stepScale: (d) => applySlideScale(slideScale + d),
+  enterFullscreen, exitFullscreen, toggleFullscreen,
+  isFullscreen: () => presenting,
+};
+window.__RENDU_ENGINE__ = { slides: slidesEngine };
 
 /* ── render loop ──────────────────────────────────────────────────── */
 
@@ -450,6 +540,10 @@ Promise.all([loadScene(), loadPdf()])
     goTo(0);
     setFocus(resolveBinding(1) ?? ['overview']);
     loaderEl.classList.add('done');
+    // the user's control panel — wires onto the slides engine handlers
+    import(new URL('./controller.js', import.meta.url).href)
+      .then((m) => m.mountController({ slides: slidesEngine }))
+      .catch((e) => console.warn('controller failed to mount', e));
   })
   .catch((err) => {
     console.error(err);

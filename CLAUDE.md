@@ -52,6 +52,28 @@ One shared ES module driving every project page. Pipeline:
    focused model frames in the left ~70% (wheel covers the right). Recompute
    on resize (`applyViewOffset`).
 
+### Controller engine (`assets/controller.js`)
+The user-facing control panel. Engine hierarchy is layered — **user ▶
+controller ▶ slides engine ▶ scene interface**: the user is the chief and
+drives everything from the panel, which only ever calls *handlers* exposed
+by the engine below it. `controller.js` knows nothing about three/pdf; it's
+handed a handler surface at mount and wires DOM widgets onto it. Add a
+control by dropping a widget into the panel markup, binding it to a handler,
+and reflecting that handler's state in `sync()`.
+`viewer.js` exposes the **slides engine** as `window.__RENDU_ENGINE__.slides`
+(also passed directly at mount): `{ next, prev, goTo, state, onChange,
+scaleRange, getScale, setScale, stepScale, enter/exit/toggleFullscreen,
+isFullscreen }`. Controller subscribes via `onChange` so the UI reflects
+programmatic / Esc-driven state. Two controls shipped so far:
+- **Slide size**: `setScale`/`stepScale` (clamped 0.65–1.6) drives CSS var
+  `--wheel-scale`; `--wheel-w = --wheel-base × --wheel-scale`, and
+  `wheelShare()` multiplies by `slideScale` so the camera offset stays
+  matched. *This is why the wheel width lives in a CSS var now.*
+- **Fullscreen**: presentation mode. Re-parents the active `.slide-card`
+  onto a fullscreen `#stage` (`body.presenting`), `wheelShare()` → 0 so the
+  3D recenters, requests native fullscreen, and `goTo` calls `syncStage()`
+  so nav swaps the staged card. Esc / `fullscreenchange` exit cleanly.
+
 ### Marp pipeline
 `projects/*/slides.md` → `slides.pdf` via marp-cli with the custom theme
 `assets/marp-theme.css` (`/* @theme phosphor2600 */`, imports `default`).
@@ -79,8 +101,10 @@ harmless).
 - pdf.js version is pinned in viewer.js (`PDFJS_VERSION`); worker set via
   `GlobalWorkerOptions.workerSrc`. three.js pinned in each project's
   importmap (0.160.0).
-- `wheelShare()` and the viewOffset must stay consistent with `.wheel`
-  width in viewer.css (30vw desktop / 38vw mobile).
+- `wheelShare()` and the viewOffset must stay consistent with the `.wheel`
+  width, now the CSS var `--wheel-base` (30vw desktop / 38vw mobile) × the
+  controller's `--wheel-scale`. `wheelShare()` mirrors this: base × slideScale,
+  and returns 0 while `presenting`.
 - Slide wheel cards assume 16:9-ish decks (vertical centering uses a
   0.281 aspect constant in viewer.css).
 - Target `dir` is the camera approach direction (world, normalized by
